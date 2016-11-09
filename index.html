@@ -9,22 +9,29 @@
     </head>
     <body onload="main()">
 
-        <div id="drawPanel">
-        </div>
+        <div id="drawPanel"></div>
 
         <div id="controlPanel">
-            <form id="particleSelectorGroup">
-              <input type="radio" name="particleSelector" value="snow" checked>Snow
-              <input type="radio" name="particleSelector" value="rain">Rain
-              <input type="radio" name="particleSelector" value="leaves">Leaves
-              <input type="radio" name="particleSelector" value="bugs">Bugs
-            </form>
+            <div class="controlPanelRow">
+                <input type="radio" name="particleSelector" id="particleSelectorSnow" value="snow" checked>
+                <label for="particleSelectorSnow">Snow</label>
+                <input type="radio" name="particleSelector" id="particleSelectorRain" value="rain">
+                <label for="particleSelectorRain">Rain</label>
+                <input type="radio" name="particleSelector" id="particleSelectorLeaves" value="leaves">
+                <label for="particleSelectorLeaves">Leaves</label>
+                <input type="radio" name="particleSelector" id="particleSelectorBugs" value="bugs">
+                <label for="particleSelectorBugs">Bugs</label>
+            </div>
 
-            <input id="sizeSlider" type="range" step="1" min="1" max="5" value="1">
-            <span id="sizeText"></span>
+            <div class="controlPanelRow">
+                <input id="sizeSlider" type="range" step="1" min="1" max="5" value="1">
+                Particle Size: <span id="sizeText"></span>
+            </div>
 
-            <button id="playButton">Play</button>
-            <button id="pauseButton">Pause</button>
+            <div class="controlPanelRow">
+                <button id="playButton">Play</button>
+                <button id="pauseButton">Pause</button>
+            </div>
         </div>
     </body>
 </html>

@@ -5,3 +5,7 @@
 #controlPanel {
     margin-top: 10px;
 }
+
+#controlPanel .controlPanelRow {
+    text-align: center;
+}
