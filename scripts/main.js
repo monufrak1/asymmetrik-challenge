@@ -2,26 +2,36 @@ var particleSelector;
 var playButton;
 var pauseButton;
 var sizeSlider;
+var freqSlider;
 var sizeText;
 var drawPanel;
 
 var canvasWidth = 800;
 var canvasHeight = 600;
 
-var particleScalar = 0.05;
-
-var particleSize;
-var particleType;
-
 var PARTICLE_TYPE_SNOW = "SNOW";
 var PARTICLE_TYPE_RAIN = "RAIN";
 var PARTICLE_TYPE_LEAVES = "LEAVES";
 var PARTICLE_TYPE_BUGS = "BUGS";
 
+var particleSpeeds = {};
+particleSpeeds[PARTICLE_TYPE_SNOW] = 1;
+particleSpeeds[PARTICLE_TYPE_RAIN] = 3;
+particleSpeeds[PARTICLE_TYPE_LEAVES] = 0.5;
+particleSpeeds[PARTICLE_TYPE_BUGS] = 0.5;
+
+var particleScalar = 0.05;
+var maxParticleAge = 6.0;
+
+var particleSize;
+var particleFreq;
+var particleType;
+
 function main() {
     playButton = document.getElementById("playButton");
     pauseButton = document.getElementById("pauseButton");
     sizeSlider = document.getElementById("sizeSlider");
+    freqSlider = document.getElementById("freqSlider");
     sizeText = document.getElementById("sizeText");
     drawPanel = document.getElementById("drawPanel");
 
@@ -58,10 +68,15 @@ function main() {
     sizeSlider.oninput = function() {
         setParticleSize(sizeSlider.value);
     }
+
+    freqSlider.oninput = function() {
+        setParticleFreq(freqSlider.value);
+    }
     
     playButton.disabled = true;
     pauseButton.disabled = false;
-    setParticleSize(1);
+    setParticleSize(sizeSlider.value);
+    setParticleFreq(freqSlider.value);
     setParticleType(PARTICLE_TYPE_SNOW);
 
     initWebgl();
@@ -75,6 +90,11 @@ function toggleControlButtons() {
 function setParticleSize(size) {
     particleSize = size * particleScalar;
     sizeText.innerText = size;
+}
+
+function setParticleFreq(freq) {
+    particleFreq = 1 / freq;
+    freqText.innerText = freq + "/Sec";
 }
 
 function setParticleType(type) {
@@ -145,6 +165,14 @@ function initWebgl() {
                     0,1,0,0,
                     0,0,1,0,
                     x,y,0,1];  
+        }
+
+        function buildOscillatingMatrix(x, y, speed, multiplier) {
+            return buildTranslationMatrix(x + Math.cos(y * speed) * multiplier, y);
+        }
+
+        function buildSpinningMatrix(x, y, speed, multiplier) {
+            return buildTranslationMatrix(x + Math.sin(y * speed) * multiplier, y + Math.cos(y * speed) * multiplier);
         }
 
         function createTexture(src) {
@@ -220,11 +248,6 @@ function initWebgl() {
         var prevTime = 0;
         var spawnTime = 0;
 
-        var particleFreqInSecs = 0.5;
-
-        var particleSpawnY = 1.0;
-        var maxParticleAge = 3.0;
-
         // Main render 'loop' function
         function draw () {
             var currTime = getCurrTime();
@@ -236,30 +259,57 @@ function initWebgl() {
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
             // Spawn new particles
-            if(elapsedTime - spawnTime >= particleFreqInSecs) {
+            var particleSpawnY = 1.0 + particleSize;
+            if(elapsedTime - spawnTime >= particleFreq) {
                 // Spawn new particle
                 particles.push({
-                    posX: (Math.random() * 2) - 1,
-                    posY: particleSpawnY,
+                    posX: (Math.random() * 2) - 1,      // Random X position within view window
+                    posY: particleSpawnY,               
                     velX: 0.1,
                     velY: -1,
                     age: 0.0,
                     rand: Math.random(),
-                    texture: particleTextures[particleType]
+                    texture: particleTextures[particleType],
+                    type: particleType,
+                    size: particleSize,
+                    speed: particleSpeeds[particleType]
                 });
 
                 spawnTime = elapsedTime;
             }
 
-            // Draw particles
+            // Update and active draw particles
             particles.forEach(function(particle, index) {
                 // Update particle age
                 particle.age += deltaTime;
 
                 if(particle.age <= maxParticleAge) {
                     // Create translation matrix
-                    var transMatrix = buildTranslationMatrix(particle.posX + particle.velX*particle.age, particle.posY + particle.velY*particle.age);
+                    var transMatrix;
+                    var curPosX = particle.posX + (particle.velX * particle.age * particle.speed);
+                    var curPosY = particle.posY + (particle.velY * particle.age * particle.speed);
+
+                    // Define particle specific behavior
+                    if(particle.type === PARTICLE_TYPE_SNOW) {
+                        // Fall with random sway along X axis
+                        transMatrix = buildOscillatingMatrix(curPosX, curPosY, particle.rand*5.0, 0.1);
+                    } else if(particle.type === PARTICLE_TYPE_RAIN) {
+                        // Fall at a constant rate following default velocity
+                        transMatrix = buildTranslationMatrix(curPosX, curPosY);
+                    } else if(particle.type === PARTICLE_TYPE_LEAVES) {
+                        // Fall with random sway with random length along X axis 
+                        transMatrix = buildOscillatingMatrix(curPosX, curPosY, particle.rand*5.0, particle.rand*0.2);
+                    } else if(particle.type === PARTICLE_TYPE_BUGS) {
+                        // Fall with random circles along X and Y axes
+                        transMatrix = buildSpinningMatrix(curPosX, curPosY, particle.rand*20, particle.rand*0.1);
+                    } else {
+                        transMatrix = buildTranslationMatrix(curPosX, curPosY);
+                    }
+
                     gl.uniformMatrix4fv(translationVarLoc, false, new Float32Array(transMatrix));
+
+                    // Set particle size
+                    gl.uniform1f(scaleVarLoc, particle.size);
 
                     // Apply texture
                     gl.activeTexture(gl.TEXTURE0);
