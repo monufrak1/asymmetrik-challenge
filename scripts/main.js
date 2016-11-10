@@ -88,8 +88,6 @@ function initWebgl() {
     var gl = canvas.getContext("webgl");
     
     if(gl) {
-        var particleSpeed = 0;
-
         var vertices = [+0.5, -0.5, 0,
                         +0.5, +0.5, 0,
                         -0.5, -0.5, 0,
@@ -123,6 +121,10 @@ function initWebgl() {
                     0,0,1,0,
                     x,y,0,1];  
         }
+
+        function getCurrTime () {
+            return Date.now() * 0.001;
+        }
         
         var buildShader = function (shaderSource, shaderType) {
             var shader = gl.createShader(shaderType);
@@ -153,31 +155,66 @@ function initWebgl() {
 
         // Enable shaders
         gl.enableVertexAttribArray(positionVarLoc);
+        gl.vertexAttribPointer(positionVarLoc, vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
         gl.uniform1f(scaleVarLoc, particleSize);
 
         // Set viewport and clear color
         gl.viewport(0, 0, canvasWidth, canvasHeight);
         gl.clearColor(0, 0, 0, 1.0);
 
-        var deltaTime = 0;
+        var particles = [];
+        var elapsedTime = 0;
+        var prevTime = 0;
+        var spawnTime = 0;
+
+        var particleSpeed = 1;
+        var particleFreqInSecs = 0.5;
+
+        var particleSpawnY = 1.0;
+        var maxParticleAge = 3.0;
 
         // Main render 'loop' function
         function draw () {
-            deltaTime += 0.005;
+            var currTime = getCurrTime();
+            var deltaTime = currTime - prevTime;
+            elapsedTime += deltaTime;
+            prevTime = currTime;
 
             // Clear back buffer
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-            var posX = 0;
-            var posY = 0;
+            // Spawn new particles
+            if(elapsedTime - spawnTime >= particleFreqInSecs) {
+                // Spawn new particle
+                particles.push({
+                    posX: (Math.random() * 2) - 1,
+                    posY: particleSpawnY,
+                    velX: 0.1,
+                    velY: -1,
+                    age: 0.0,
+                    rand: Math.random()
+                });
 
-            // Create translation matrix
-            var transMatrix = buildTranslationMatrix(posX + deltaTime*particleSpeed, posY - deltaTime*particleSpeed);
-            
-            gl.uniformMatrix4fv(translationVarLoc, false, new Float32Array(transMatrix));
-            gl.vertexAttribPointer(positionVarLoc, vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
-            
-            gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexBuffer.numItems);
+                spawnTime = elapsedTime;
+            }
+
+            // Draw particles
+            particles.forEach(function(particle, index) {
+                // Update particle age
+                particle.age += deltaTime;
+
+                if(particle.age <= maxParticleAge) {
+                    // Create translation matrix
+                    var transMatrix = buildTranslationMatrix(particle.posX + particle.velX*particleSpeed*particle.age, particle.posY + particle.velY*particleSpeed*particle.age);
+                    
+                    // Draw vertices
+                    gl.uniformMatrix4fv(translationVarLoc, false, new Float32Array(transMatrix));
+                    gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexBuffer.numItems);
+                } else {
+                    // Destroy particle
+                    particles.splice(index, 1);
+                }
+            });
         
             window.requestAnimationFrame(draw);
         }
