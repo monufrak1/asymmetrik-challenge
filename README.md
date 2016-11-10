@@ -1,6 +1,6 @@
 ## Browser Particle System
 
-**Asymmetric** coding challenge to create an in-browser particle simulation app. Snow, rain, leaf, and bug particles are included. The simulation was implemented using WebGL.
+**Asymmetrik** coding challenge to create an in-browser particle simulation app. Snow, rain, leaf, and bug particles are included. The simulation was implemented using WebGL.
 
 ## Instructions
 
