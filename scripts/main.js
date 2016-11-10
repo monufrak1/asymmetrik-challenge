@@ -1,8 +1,3 @@
-var particleSelector;
-var sizeSlider;
-var freqSlider;
-var sizeText;
-var drawPanel;
 
 var canvasWidth = 800;
 var canvasHeight = 600;
@@ -32,11 +27,11 @@ var animationPaused;
 
 function main() {
     var playPauseButton = document.getElementById("playPauseButton");
-    sizeSlider = document.getElementById("sizeSlider");
-    freqSlider = document.getElementById("freqSlider");
-    sizeText = document.getElementById("sizeText");
-    drawPanel = document.getElementById("drawPanel");
+    var sizeSlider = document.getElementById("sizeSlider");
+    var freqSlider = document.getElementById("freqSlider");
+    var sizeText = document.getElementById("sizeText");
 
+    // Attach event handlers
     playPauseButton.onclick = function() {
         animationPaused = !animationPaused;
 
@@ -67,17 +62,18 @@ function main() {
         setParticleFreq(freqSlider.value);
     }
     
+    // Set controls to default values
     animationPaused = false;
+    document.getElementById("particleSelectorSnow").checked = true;
+    sizeSlider.value = sizeSlider.min;
+    freqSlider.value = freqSlider.min;
+
     setParticleSize(sizeSlider.value);
     setParticleFreq(freqSlider.value);
     setParticleType(PARTICLE_TYPE_SNOW);
 
+    // Start simulation
     initWebgl();
-}
-
-function toggleControlButtons() {
-    playButton.disabled = !playButton.disabled;
-    pauseButton.disabled = !pauseButton.disabled;
 }
 
 function setParticleSize(size) {
@@ -95,14 +91,12 @@ function setParticleType(type) {
 }
 
 function initWebgl() {
-    drawPanel.innerHTML = "";
-
     var canvas = document.createElement("canvas");
     canvas.id = "drawCanvas";
     canvas.setAttribute("width", canvasWidth + "px");
     canvas.setAttribute("height", canvasHeight + "px");
 
-    drawPanel.appendChild(canvas);
+    document.getElementById("drawPanel").appendChild(canvas);
 
     var gl = canvas.getContext("experimental-webgl");
     
