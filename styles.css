@@ -11,3 +11,22 @@
 
     text-align: center;
 }
+
+.controlPanelRow {
+    margin-bottom: 10px;
+}
+
+#playPauseButton {
+    width: 64px;
+    height: 64px;
+
+    border-radius: 2px;
+    background-color: lightgray;
+    box-shadow: 1px 1px 1px gray;
+
+    transition: background-color 0.25s;
+}
+
+#playPauseButton:hover {
+    background-color: slategray;
+}

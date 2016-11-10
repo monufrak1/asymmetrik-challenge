@@ -1,6 +1,4 @@
 var particleSelector;
-var playButton;
-var pauseButton;
 var sizeSlider;
 var freqSlider;
 var sizeText;
@@ -8,6 +6,9 @@ var drawPanel;
 
 var canvasWidth = 800;
 var canvasHeight = 600;
+
+var playIconSrc = "assets/play-icon.png";
+var pauseIconSrc = "assets/pause-icon.png";
 
 var PARTICLE_TYPE_SNOW = "SNOW";
 var PARTICLE_TYPE_RAIN = "RAIN";
@@ -27,26 +28,19 @@ var particleSize;
 var particleFreq;
 var particleType;
 
+var animationPaused;
+
 function main() {
-    playButton = document.getElementById("playButton");
-    pauseButton = document.getElementById("pauseButton");
+    var playPauseButton = document.getElementById("playPauseButton");
     sizeSlider = document.getElementById("sizeSlider");
     freqSlider = document.getElementById("freqSlider");
     sizeText = document.getElementById("sizeText");
     drawPanel = document.getElementById("drawPanel");
 
-    playButton.onclick = function() {
-        toggleControlButtons();
+    playPauseButton.onclick = function() {
+        animationPaused = !animationPaused;
 
-        // Play animations
-
-    }
-
-    pauseButton.onclick = function() {
-        toggleControlButtons();
-
-        // Pause animations
-
+        playPauseButton.src = animationPaused ? playIconSrc : pauseIconSrc;
     }
 
     document.getElementById("particleSelectorSnow").onchange = function() {
@@ -73,8 +67,7 @@ function main() {
         setParticleFreq(freqSlider.value);
     }
     
-    playButton.disabled = true;
-    pauseButton.disabled = false;
+    animationPaused = false;
     setParticleSize(sizeSlider.value);
     setParticleFreq(freqSlider.value);
     setParticleType(PARTICLE_TYPE_SNOW);
@@ -111,7 +104,7 @@ function initWebgl() {
 
     drawPanel.appendChild(canvas);
 
-    var gl = canvas.getContext("webgl");
+    var gl = canvas.getContext("experimental-webgl");
     
     if(gl) {
         // Create vertex buffer
@@ -252,82 +245,85 @@ function initWebgl() {
         function draw () {
             var currTime = getCurrTime();
             var deltaTime = currTime - prevTime;
-            elapsedTime += deltaTime;
             prevTime = currTime;
 
-            // Clear back buffer
-            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            if(!animationPaused) {
+                elapsedTime += deltaTime;
 
-            // Spawn new particles
-            var particleSpawnY = 1.0 + particleSize;
-            if(elapsedTime - spawnTime >= particleFreq) {
-                // Spawn new particle
-                particles.push({
-                    posX: (Math.random() * 2) - 1,      // Random X position within view window
-                    posY: particleSpawnY,               
-                    velX: 0.1,
-                    velY: -1,
-                    age: 0.0,
-                    rand: Math.random(),
-                    texture: particleTextures[particleType],
-                    type: particleType,
-                    size: particleSize,
-                    speed: particleSpeeds[particleType]
-                });
+                // Clear back buffer
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-                spawnTime = elapsedTime;
-            }
+                // Spawn new particles
+                var particleSpawnY = 1.0 + particleSize;
+                if(elapsedTime - spawnTime >= particleFreq) {
+                    // Spawn new particle
+                    particles.push({
+                        posX: (Math.random() * 2) - 1,      // Random X position within view window
+                        posY: particleSpawnY,               
+                        velX: 0.1,
+                        velY: -1,
+                        age: 0.0,
+                        rand: Math.random(),
+                        texture: particleTextures[particleType],
+                        type: particleType,
+                        size: particleSize,
+                        speed: particleSpeeds[particleType]
+                    });
 
-            // Update and active draw particles
-            particles.forEach(function(particle, index) {
-                // Update particle age
-                particle.age += deltaTime;
-
-                if(particle.age <= maxParticleAge) {
-                    // Create translation matrix
-                    var transMatrix;
-                    var curPosX = particle.posX + (particle.velX * particle.age * particle.speed);
-                    var curPosY = particle.posY + (particle.velY * particle.age * particle.speed);
-
-                    // Define particle specific behavior
-                    if(particle.type === PARTICLE_TYPE_SNOW) {
-                        // Fall with random sway along X axis
-                        transMatrix = buildOscillatingMatrix(curPosX, curPosY, particle.rand*5.0, 0.1);
-                    } else if(particle.type === PARTICLE_TYPE_RAIN) {
-                        // Fall at a constant rate following default velocity
-                        transMatrix = buildTranslationMatrix(curPosX, curPosY);
-                    } else if(particle.type === PARTICLE_TYPE_LEAVES) {
-                        // Fall with random sway with random length along X axis 
-                        transMatrix = buildOscillatingMatrix(curPosX, curPosY, particle.rand*5.0, particle.rand*0.2);
-                    } else if(particle.type === PARTICLE_TYPE_BUGS) {
-                        // Fall with random circles along X and Y axes
-                        transMatrix = buildSpinningMatrix(curPosX, curPosY, particle.rand*20, particle.rand*0.1);
-                    } else {
-                        transMatrix = buildTranslationMatrix(curPosX, curPosY);
-                    }
-
-                    gl.uniformMatrix4fv(translationVarLoc, false, new Float32Array(transMatrix));
-
-                    // Set particle size
-                    gl.uniform1f(scaleVarLoc, particle.size);
-
-                    // Apply texture
-                    gl.activeTexture(gl.TEXTURE0);
-                    gl.bindTexture(gl.TEXTURE_2D, particle.texture);
-
-                    // Draw vertices
-                    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-                    gl.vertexAttribPointer(positionVarLoc, vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-                    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
-                    gl.vertexAttribPointer(texCoordVarLoc, texCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-                    gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexBuffer.numItems);
-                } else {
-                    // Destroy particle
-                    particles.splice(index, 1);
+                    spawnTime = elapsedTime;
                 }
-            });
+
+                // Update and active draw particles
+                particles.forEach(function(particle, index) {
+                    // Update particle age
+                    particle.age += deltaTime;
+
+                    if(particle.age <= maxParticleAge) {
+                        // Create translation matrix
+                        var transMatrix;
+                        var curPosX = particle.posX + (particle.velX * particle.age * particle.speed);
+                        var curPosY = particle.posY + (particle.velY * particle.age * particle.speed);
+
+                        // Define particle specific behavior
+                        if(particle.type === PARTICLE_TYPE_SNOW) {
+                            // Fall with random sway along X axis
+                            transMatrix = buildOscillatingMatrix(curPosX, curPosY, particle.rand*5.0, 0.1);
+                        } else if(particle.type === PARTICLE_TYPE_RAIN) {
+                            // Fall at a constant rate following default velocity
+                            transMatrix = buildTranslationMatrix(curPosX, curPosY);
+                        } else if(particle.type === PARTICLE_TYPE_LEAVES) {
+                            // Fall with random sway with random length along X axis 
+                            transMatrix = buildOscillatingMatrix(curPosX, curPosY, particle.rand*5.0, particle.rand*0.2);
+                        } else if(particle.type === PARTICLE_TYPE_BUGS) {
+                            // Fall with random circles along X and Y axes
+                            transMatrix = buildSpinningMatrix(curPosX, curPosY, particle.rand*20, particle.rand*0.1);
+                        } else {
+                            transMatrix = buildTranslationMatrix(curPosX, curPosY);
+                        }
+
+                        gl.uniformMatrix4fv(translationVarLoc, false, new Float32Array(transMatrix));
+
+                        // Set particle size
+                        gl.uniform1f(scaleVarLoc, particle.size);
+
+                        // Apply texture
+                        gl.activeTexture(gl.TEXTURE0);
+                        gl.bindTexture(gl.TEXTURE_2D, particle.texture);
+
+                        // Draw vertices
+                        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+                        gl.vertexAttribPointer(positionVarLoc, vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+                        gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+                        gl.vertexAttribPointer(texCoordVarLoc, texCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+                        gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexBuffer.numItems);
+                    } else {
+                        // Destroy particle
+                        particles.splice(index, 1);
+                    }
+                });
+            }
         
             window.requestAnimationFrame(draw);
         }

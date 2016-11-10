@@ -12,7 +12,7 @@
         <div id="drawPanel"></div>
 
         <div id="controlPanel">
-            <div>
+            <div class="controlPanelRow">
                 <input type="radio" name="particleSelector" id="particleSelectorSnow" value="snow" checked>
                 <label for="particleSelectorSnow">Snow</label>
                 <input type="radio" name="particleSelector" id="particleSelectorRain" value="rain">
@@ -23,16 +23,15 @@
                 <label for="particleSelectorBugs">Bugs</label>
             </div>
 
-            <div>
+            <div class="controlPanelRow">
                 <input id="sizeSlider" type="range" step="1" min="1" max="5" value="1">
                 Particle Size: <span id="sizeText"></span>
                 <input id="freqSlider" type="range" step="10" min="10" max="50" value="10">
                 Frequency: <span id="freqText"></span>
             </div>
 
-            <div>
-                <button id="playButton">Play</button>
-                <button id="pauseButton">Pause</button>
+            <div class="controlPanelRow">
+                <img id="playPauseButton" src="assets/pause-icon.png">
             </div>
         </div>
     </body>
