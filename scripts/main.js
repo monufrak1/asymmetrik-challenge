@@ -5,6 +5,9 @@ var sizeSlider;
 var sizeText;
 var drawPanel;
 
+var canvasWidth = 800;
+var canvasHeight = 600;
+
 var particleSize;
 var particleType;
 
@@ -72,5 +75,21 @@ function setParticleType(type) {
 }
 
 function initWebgl() {
+    var canvas = document.createElement("canvas");
+    canvas.id = "drawCanvas";
+    canvas.setAttribute("width", canvasWidth + "px");
+    canvas.setAttribute("height", canvasWidth + "px");
 
+    drawPanel.appendChild(canvas);
+
+    var gl = canvas.getContext("webgl");
+    
+    if(gl) {
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        
+        gl.clearColor(0, 0, 1.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    } else {
+        alert("Webgl not supported. Imagine pretty particles...");
+    }
 }

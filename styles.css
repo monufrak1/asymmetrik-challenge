@@ -1,11 +1,13 @@
+#drawPanel {
+    text-align: center;
+}
+
 #drawCanvas {
     box-shadow: 1px 1px 1px gray;
 }
 
 #controlPanel {
     margin-top: 10px;
-}
 
-#controlPanel .controlPanelRow {
     text-align: center;
 }
